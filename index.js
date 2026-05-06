@@ -2,69 +2,80 @@
 // ler perfil digitado pelo usuario FEITO
 // retornar os dados e salvar em json
 
+// imports necessários
 const readlinePromises = require("node:readline/promises");
-const { stdin, stdout } = require("process"); // entrada e saida padrão do sistema
+const { stdin, stdout } = require("process");
 const fs = require("fs");
+const imageToAscii = require("image-to-ascii");
+const terminalWidow = readlinePromises.createInterface(stdin, stdout);
 
+//leitura inicial e conversão para objeto do DB (JSON)
 const arquivo = fs.readFileSync("./profiles.json");
 const arquivoJson = JSON.parse(arquivo);
 
+// limpa e inicia o menu de opcoes
 console.clear();
-// console.log(arquivo.profiles)
+menu();
 
-function fundoAmarelo(string) {
-  return "\x1b[43m" + string + " \x1b[0m";
-}
-function fundoVermelho(string) {
-  return "\x1b[31m" + string + " \x1b[0m";
+async function lerPerfilsGravados() {
+  console.clear();
+  retornaPerfis();
+  const verPerfil = await terminalWidow.question(
+    fundoVermelho(
+      "Deseja ver algum perfil? digite o login dele ou 2 - para retornar ao menu ",
+    ),
+  );
+
+  switch (verPerfil) {
+    case "2":
+      menu();
+      break;
+    default:
+      const verificaPerfil = arquivoJson.profiles.find(
+        (perfil) => perfil.login.toLowerCase() == verPerfil.toLowerCase(),
+      );
+      if (verificaPerfil) {
+        convertImgToAscii(verificaPerfil.avatar_url);
+      } else {
+        console.log("Perfil não encontrado no arquivo");
+      }
+
+      setTimeout(() => {
+        menu();
+      }, 1000);
+
+      break;
+  }
 }
 
-const terminalWidow = readlinePromises.createInterface(stdin, stdout);
-
-function lerPerfilsGravados() {
-// fazendo
-console.clear();
-  arquivoJson.profiles.map((profile)=>{
-    console.log("Nome: ", profile.login)
-  })
- 
-}
 async function deletarPerfilGravado(perfil) {
-  //fazendo
-   lerPerfilsGravados();
-   const getLogin = await terminalWidow.question(fundoVermelho("Digite o login do perfil que deseja deletar: "));
-//    console.log(fundoVermelho("Digite o login do perfil que deseja apagar: \n"))
-   const filtraPerfil = await arquivoJson.profiles.login
-//    await arquivoJson.profiles.forEach(element => {
-//     element.login === perfil ? arquivoJson.profiles.splice(arquivoJson.profiles.findIndex(getLogin), 1) : { }
-//    });
+  retornaPerfis();
+  const getLogin = await terminalWidow.question(
+    fundoVermelho("Digite o login do perfil que deseja deletar: "),
+  );
+  const filtraPerfil = await arquivoJson.profiles.login;
 
-    const a = arquivoJson.profiles.indexOf(getLogin);
-  
-    const deletar = arquivoJson.profiles.forEach(element => {
-        if(element.login === getLogin){
-            arquivoJson.profiles.splice(arquivoJson.profiles.indexOf(element), 1)
-        }
-        
-        
-    });
-    fs.writeFileSync('./profiles.json', JSON.stringify(arquivoJson)); // escreveu no arquivo
-    console.log(fundoVermelho(getLogin+ " deletado! retornando ao menu"))
-    setTimeout(() => {
-        console.clear();       
-    }, 1000);
-    setTimeout(() => {
-        menu();   
-    }, 1500)
-     
-    
-  
+  const a = arquivoJson.profiles.indexOf(getLogin);
+
+  const deletar = arquivoJson.profiles.forEach((element) => {
+    if (element.login.toLowerCase() === getLogin.toLowerCase()) {
+      arquivoJson.profiles.splice(arquivoJson.profiles.indexOf(element), 1);
+    }
+  });
+  fs.writeFileSync("./profiles.json", JSON.stringify(arquivoJson)); // escreveu no arquivo
+  console.log(fundoVermelho(getLogin + " deletado! retornando ao menu"));
+  setTimeout(() => {
+    console.clear();
+  }, 1000);
+  setTimeout(() => {
+    menu();
+  }, 1500);
 }
-async function gravarPerfil(perfil){ // feito perfeito
-    arquivoJson.profiles.push(perfil) // adicionou ao array do objeto     
-    fs.writeFileSync('./profiles.json', JSON.stringify(arquivoJson)); // escreveu no arquivo
+async function gravarPerfil(perfil) {
+  arquivoJson.profiles.push(perfil); // adicionou ao array do objeto
+  fs.writeFileSync("./profiles.json", JSON.stringify(arquivoJson)); // escreveu no arquivo
 }
-async function menu() { // feito perfeito
+async function menu() {
   //ok falta ajustes ainda
   console.log(
     "\n",
@@ -86,7 +97,7 @@ async function menu() { // feito perfeito
 
       case "2":
         lerPerfilsGravados();
-         menu();
+        // menu();
         break;
 
       case "3":
@@ -108,40 +119,62 @@ async function menu() { // feito perfeito
   opcao();
 }
 
-async function consultarPerfil() { // feito perfeito
-  //falta add opcao registrar perfil apos consulta
+async function consultarPerfil() {
   const nome = await terminalWidow.question("Digite o perfil do Github: ");
   const response = await fetch(`https://api.github.com/users/${nome}`);
   const perfil = await response.json();
 
-  console.log(perfil);
-
-  const desejaGravar = await terminalWidow.question("Deseja salvar o perfil pesquisado? 1 - sim 2 - não\n");
-
-  const retorna = await terminalWidow.question("Deseja retornar ao menu? 1 - sim 2 - não \n");
-  
-    switch (desejaGravar) {
-    case "1":
-        gravarPerfil(perfil);
-    break;
-    case "2":
-        
-    break;
-    default: 
-    break;  
+  if (perfil.status !== "404") {
+    console.log(perfil);
+  } else {
+    console.log("Pefil não encontrado! retornando ao menu");
+    menu();
   }
-  
+
+  const desejaGravar = await terminalWidow.question(
+    "Deseja salvar o perfil pesquisado? 1 - sim 2 - não\n",
+  );
+
+  const retorna = await terminalWidow.question(
+    "Deseja retornar ao menu? 1 - sim 2 - não \n",
+  );
+
+  switch (desejaGravar) {
+    case "1":
+      gravarPerfil(perfil);
+      break;
+    case "2":
+      break;
+    default:
+      break;
+  }
+
   switch (retorna) {
     case "1":
-        console.clear();
+      console.clear();
       menu();
+
       break;
     case "2":
       terminalWidow.close();
   }
-
-
-    
 }
 
-menu(); // roda as opcoes (inicial)
+// roda as opcoes (inicial)
+
+function convertImgToAscii(img) {
+  imageToAscii(img, (err, converted) => {
+    console.log(err || converted);
+  });
+}
+function fundoAmarelo(string) {
+  return "\x1b[43m" + string + " \x1b[0m";
+}
+function fundoVermelho(string) {
+  return "\x1b[31m" + string + " \x1b[0m";
+}
+function retornaPerfis() {
+  arquivoJson.profiles.map((profile) => {
+    console.log("Nome: ", profile.login);
+  });
+}

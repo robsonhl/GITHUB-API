@@ -6,7 +6,11 @@
 const readlinePromises = require("node:readline/promises");
 const { stdin, stdout } = require("process");
 const fs = require("fs");
-const imageToAscii = require("image-to-ascii");
+const open = async (url) => {
+  const { default: openApp } = await import("open");
+  return openApp(url);
+};
+// const imageToAscii = require("image-to-ascii");
 const terminalWidow = readlinePromises.createInterface(stdin, stdout);
 
 //leitura inicial e conversão para objeto do DB (JSON)
@@ -35,7 +39,7 @@ async function lerPerfilsGravados() {
         (perfil) => perfil.login.toLowerCase() == verPerfil.toLowerCase(),
       );
       if (verificaPerfil) {
-        convertImgToAscii(verificaPerfil.avatar_url);
+        await open(verificaPerfil.avatar_url);
       } else {
         console.log("Perfil não encontrado no arquivo");
       }
@@ -162,11 +166,11 @@ async function consultarPerfil() {
 
 // roda as opcoes (inicial)
 
-function convertImgToAscii(img) {
-  imageToAscii(img, (err, converted) => {
-    console.log(err || converted);
-  });
-}
+// // function convertImgToAscii(img) {
+//   imageToAscii(img, (err, converted) => {
+//     console.log(err || converted);
+//   });
+// }
 function fundoAmarelo(string) {
   return "\x1b[43m" + string + " \x1b[0m";
 }

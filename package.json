@@ -10,9 +10,8 @@
   "author": "",
   "license": "ISC",
   "description": "",
-  "type": "module",
+  "type": "commonjs",
   "dependencies": {
-    "gm": "^1.25.1",
-    "image-to-ascii": "^3.3.0"
+    "open": "^11.0.0"
   }
 }
